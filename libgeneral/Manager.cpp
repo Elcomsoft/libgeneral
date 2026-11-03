@@ -5,12 +5,13 @@
 //  Created by tihmstar on 17.11.20.
 //  Copyright © 2020 tihmstar. All rights reserved.
 //
-
 #include "../include/libgeneral/macros.h"
+
 #include "../include/libgeneral/exception.hpp"
 #include "../include/libgeneral/Manager.hpp"
 #include "../include/libgeneral/Event.hpp"
 #include <unistd.h>
+#include <sched.h>
 
 
 using namespace tihmstar;

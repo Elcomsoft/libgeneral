@@ -14,12 +14,12 @@
 #include <libgeneral/Mem.hpp>
 
 namespace tihmstar {
-    
+
 Mem readFile(const char *path);
 void writeFile(const char *path, const void *mem, size_t memSize, int perm = 0644);
 bool fileExists(const char *path) noexcept;
 uint64_t parseNum(const char *num) noexcept;
-int hexToBytes(const char *hexstr, uint8_t *output, size_t outbufSize) noexcept;
+int hexToBytes(const char *hexstr, uint8_t *outbuf, size_t outbufSize) noexcept;
 void bytesToHex(const uint8_t *bytes, size_t bytesSize, char *outStr, size_t *outStrSize) noexcept;
 };
 

@@ -5,12 +5,11 @@
 //  Created by tihmstar on 09.03.18.
 //  Copyright © 2018 tihmstar. All rights reserved.
 //
-
 #ifndef _GNU_SOURCE
 #   define _GNU_SOURCE
 #endif
-
 #include "../include/libgeneral/macros.h"
+
 #include "../include/libgeneral/exception.hpp"
 #include <string.h>
 #include <stdarg.h>

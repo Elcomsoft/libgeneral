@@ -16,9 +16,6 @@
 
 #ifdef __APPLE__
 #   include <libkern/OSByteOrder.h>
-#   define bswap_16(x) _OSSwapInt16(x)
-#   define bswap_32(x) _OSSwapInt32(x)
-#   define bswap_64(x) _OSSwapInt64(x)
 #elif @HEADER_HAVE_BYTESWAP_H@ //HEADER_HAVE_BYTESWAP_H
 #   include <byteswap.h>
 #endif
@@ -28,17 +25,15 @@
 #endif
 
 #if @HEADER_HAVE_ARPA_INET_H@ //HEADER_HAVE_ARPA_INET_H
-#define MAYBE_CONSTEXPR constexpr inline
 #   include <arpa/inet.h>
 #elif @HEADER_HAVE_WINSOCK_H@ //HEADER_HAVE_WINSOCK_H
-#define MAYBE_CONSTEXPR inline
+#   define MAYBE_CONSTEXPR inline
 #   include <winsock.h>
 #   include <sys/param.h>
-#   define bswap_16(x) __builtin_bswap16(x)
-#   define bswap_32(x) __builtin_bswap32(x)
-#   define bswap_64(x) __builtin_bswap64(x)
-#else
-#error needs htons and friends
+#endif
+
+#ifndef MAYBE_CONSTEXPR
+#   define MAYBE_CONSTEXPR constexpr inline
 #endif
 
 #ifdef __APPLE__
@@ -58,148 +53,149 @@ MAYBE_CONSTEXPR bool isBigEndianSystem(){
 #   endif
 }
 #else
-inline bool isBigEndianSystem(){
-    return htonl(1) == 1;
-}
+#error can't determine byteorder for system
 #endif
 
-#if !@FUNC_HAVE_DECL_HTONLL@ //FUNC_HAVE_DECL_HTONLL
-#   if @HEADER_HAVE_ENDIAN_H@ //HEADER_HAVE_ENDIAN_H
-#       define htonll(x) htobe64(x)
-#       define ntohll(x) be64toh(x)
-#   else //HEADER_HAVE_ENDIAN_H
-inline uint64_t htonll(uint64_t x){
-    if (isBigEndianSystem()) {
-        //big endian system
-        return x;
-    }else{
-        uint32_t l = x & 0xffffffff;
-        uint32_t u = (x>>32) & 0xffffffff;
-        return (((uint64_t)htonl(l)) << 32) | htonl(u);
-    }
-}
-#       define ntohll htonll
-#   endif //HEADER_HAVE_ENDIAN_H
-#endif //!FUNC_HAVE_DECL_HTONLL
+template <typename T>
+inline T byteOrder_HTOBE(T num);
 
 template <typename T>
-inline T byteOrder_BE(T num);
-
-template <typename T>
-inline T byteOrder_HO(T num);
-
-template <typename T>
-inline T byteOrder_LE(T num);
+inline T byteOrder_HTOLE(T num);
 
 #pragma mark implementation BE
 template<>
-MAYBE_CONSTEXPR uint8_t byteOrder_BE<uint8_t>(uint8_t num){
+MAYBE_CONSTEXPR uint8_t byteOrder_HTOBE<uint8_t>(uint8_t num){
     return num;
 }
 
 template<>
-MAYBE_CONSTEXPR int8_t byteOrder_BE<int8_t>(int8_t num){
+MAYBE_CONSTEXPR int8_t byteOrder_HTOBE<int8_t>(int8_t num){
     return num;
 }
 
 template<>
-inline uint16_t byteOrder_BE<uint16_t>(uint16_t num){
+inline uint16_t byteOrder_HTOBE<uint16_t>(uint16_t num){
+#if @HAVE_DECL_HTONS@ //HAVE_DECL_HTONS
     return htons(num);
+#else
+    return isBigEndianSystem() ? num : __builtin_bswap16(num);
+#endif
 }
 
 template<>
-inline int16_t byteOrder_BE<int16_t>(int16_t num){
+inline int16_t byteOrder_HTOBE<int16_t>(int16_t num){
+#if @HAVE_DECL_HTONS@ //HAVE_DECL_HTONS
     return htons(num);
+#else
+    return isBigEndianSystem() ? num : __builtin_bswap16(num);
+#endif
 }
 
 template<>
-inline uint32_t byteOrder_BE<uint32_t>(uint32_t num){
+inline uint32_t byteOrder_HTOBE<uint32_t>(uint32_t num){
+#if @HAVE_DECL_HTONL@ //HAVE_DECL_HTONL
     return htonl(num);
+#else
+    return isBigEndianSystem() ? num : __builtin_bswap32(num);
+#endif
 }
 
 template<>
-inline int32_t byteOrder_BE<int32_t>(int32_t num){
+inline int32_t byteOrder_HTOBE<int32_t>(int32_t num){
+#if @HAVE_DECL_HTONL@ //HAVE_DECL_HTONL
     return htonl(num);
+#else
+    return isBigEndianSystem() ? num : __builtin_bswap32(num);
+#endif
 }
 
 template<>
-inline uint64_t byteOrder_BE<uint64_t>(uint64_t num){
+inline uint64_t byteOrder_HTOBE<uint64_t>(uint64_t num){
+#if @HAVE_DECL_HTONLL@ //HAVE_DECL_HTONLL
     return htonll(num);
+#else
+    return isBigEndianSystem() ? num : __builtin_bswap64(num);
+#endif
 }
 
 template<>
-inline int64_t byteOrder_BE<int64_t>(int64_t num){
+inline int64_t byteOrder_HTOBE<int64_t>(int64_t num){
+#if @HAVE_DECL_HTONLL@ //HAVE_DECL_HTONLL
     return htonll(num);
+#else
+    return isBigEndianSystem() ? num : __builtin_bswap64(num);
+#endif
 }
 
 #pragma mark implementation LE
 template<>
-MAYBE_CONSTEXPR uint8_t byteOrder_LE<uint8_t>(uint8_t num){
+MAYBE_CONSTEXPR uint8_t byteOrder_HTOLE<uint8_t>(uint8_t num){
     return num;
 }
 
 template<>
-MAYBE_CONSTEXPR int8_t byteOrder_LE<int8_t>(int8_t num){
+MAYBE_CONSTEXPR int8_t byteOrder_HTOLE<int8_t>(int8_t num){
     return num;
 }
 
 template<>
-inline uint16_t byteOrder_LE<uint16_t>(uint16_t num){
+inline uint16_t byteOrder_HTOLE<uint16_t>(uint16_t num){
 #if @HAVE_DECL_HTOLE16@ //HAVE_DECL_HTOLE16
     return htole16(num);
 #else
-    return isBigEndianSystem() ? num : bswap_16(num);
+    return !isBigEndianSystem() ? num : __builtin_bswap16(num);
 #endif
 }
 
 template<>
-inline int16_t byteOrder_LE<int16_t>(int16_t num){
+inline int16_t byteOrder_HTOLE<int16_t>(int16_t num){
 #if @HAVE_DECL_HTOLE16@ //HAVE_DECL_HTOLE16
     return htole16((uint16_t)num);
 #else
-    return isBigEndianSystem() ? num : bswap_16(num);
+    return !isBigEndianSystem() ? num : __builtin_bswap16(num);
 #endif
 }
 
 template<>
-inline uint32_t byteOrder_LE<uint32_t>(uint32_t num){
+inline uint32_t byteOrder_HTOLE<uint32_t>(uint32_t num){
 #if @HAVE_DECL_HTOLE32@ //HAVE_DECL_HTOLE32
     return htole32(num);
 #else
-    return isBigEndianSystem() ? num : bswap_32(num);
+    return !isBigEndianSystem() ? num : __builtin_bswap32(num);
 #endif
 }
 
 template<>
-inline int32_t byteOrder_LE<int32_t>(int32_t num){
+inline int32_t byteOrder_HTOLE<int32_t>(int32_t num){
 #if @HAVE_DECL_HTOLE32@ //HAVE_DECL_HTOLE32
     return htole32((uint32_t)num);
 #else
-    return isBigEndianSystem() ? num : bswap_32(num);
+    return !isBigEndianSystem() ? num : __builtin_bswap32(num);
 #endif
 }
 
 template<>
-inline uint64_t byteOrder_LE<uint64_t>(uint64_t num){
+inline uint64_t byteOrder_HTOLE<uint64_t>(uint64_t num){
 #if @HAVE_DECL_HTOLE64@ //HAVE_DECL_HTOLE64
     return htole64(num);
 #else
-    return isBigEndianSystem() ? num : bswap_64(num);
+    return !isBigEndianSystem() ? num : __builtin_bswap64(num);
 #endif
 }
 
 template<>
-inline int64_t byteOrder_LE<int64_t>(int64_t num){
+inline int64_t byteOrder_HTOLE<int64_t>(int64_t num){
 #if @HAVE_DECL_HTOLE64@ //HAVE_DECL_HTOLE64
     return htole64((uint64_t)num);
 #else
-    return isBigEndianSystem() ? num : bswap_64(num);
+    return !isBigEndianSystem() ? num : __builtin_bswap64(num);
 #endif
 }
 
-#define cnvBE(x) byteOrder_BE(x)
-#define cnvLE(x) byteOrder_LE(x)
-
+#define cnvHTOBE(x) byteOrder_HTOBE(x)
+#define cnvBETOH(x) byteOrder_HTOBE(x)
+#define cnvHTOLE(x) byteOrder_HTOLE(x)
+#define cnvLETOH(x) byteOrder_HTOLE(x)
 
 #pragma mark UTF-16
 inline std::wstring strToWstr(const char *s){

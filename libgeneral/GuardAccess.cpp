@@ -5,6 +5,7 @@
 //  Created by erd on 27.10.23.
 //  Copyright © 2023 tihmstar. All rights reserved.
 //
+#include "../include/libgeneral/macros.h"
 
 #include "../include/libgeneral/GuardAccess.hpp"
 

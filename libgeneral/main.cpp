@@ -20,7 +20,7 @@ int main_r(int argc, const char * argv[]) {
     printf("start\n");
     
     Mem asd;
-    
+
     printf("done\n");
     return 0;
 }

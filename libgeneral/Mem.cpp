@@ -5,9 +5,9 @@
 //  Created by erd on 08.08.23.
 //  Copyright © 2023 tihmstar. All rights reserved.
 //
+#include "../include/libgeneral/macros.h"
 
 #include "../include/libgeneral/Mem.hpp"
-#include "../include/libgeneral/macros.h"
 
 using namespace tihmstar;
 
@@ -55,20 +55,24 @@ Mem::~Mem(){
 }
 
 Mem& Mem::operator=(const Mem &obj){
-    safeFree(_mem);
-    _memSize = obj._memSize;
-    if (_memSize){
-        assure(_mem = (uint8_t*)malloc(_allocatedSize = _memSize));
-        memcpy(_mem, obj._mem, _memSize);
+    if (this != &obj){
+        safeFree(_mem);
+        _memSize = obj._memSize;
+        if (_memSize){
+            assure(_mem = (uint8_t*)malloc(_allocatedSize = _memSize));
+            memcpy(_mem, obj._mem, _memSize);
+        }
     }
     return *this;
 }
 
 Mem& Mem::operator=(Mem &&old) noexcept{
-    safeFree(_mem);
-    _mem = old._mem; old._mem = NULL;
-    _memSize = old._memSize; old._memSize = 0;
-    _allocatedSize = old._allocatedSize; old._allocatedSize = 0;
+    if (this != &old){
+        safeFree(_mem);
+        _mem = old._mem; old._mem = NULL;
+        _memSize = old._memSize; old._memSize = 0;
+        _allocatedSize = old._allocatedSize; old._allocatedSize = 0;
+    }
     return *this;
 }
 

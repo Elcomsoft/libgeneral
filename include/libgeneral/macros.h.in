@@ -30,14 +30,20 @@
 #define VERSION_MAJOR "0"
 #endif //VERSION_MAJOR
 
+#ifndef VERSION_MINOR
+#define VERSION_MINOR "0"
+#endif //VERSION_MAJOR
+
+
 #ifdef DEBUG
 #define BUILD_TYPE "DEBUG"
 #else
 #define BUILD_TYPE "RELEASE"
 #endif
 
-#define VERSION_STRING PACKAGE_NAME " version: " VERSION_MAJOR "." VERSION_COMMIT_COUNT "-" VERSION_COMMIT_SHA "-" BUILD_TYPE
+#define VERSION_STRING PACKAGE_NAME " version: " VERSION_MAJOR "." VERSION_MINOR "_" VERSION_COMMIT_COUNT "-" VERSION_COMMIT_SHA "-" BUILD_TYPE
 
+#define ARRAYOF(a) (sizeof(a)/sizeof(*a))
 
 // ---- functions ----
 
@@ -100,6 +106,7 @@ static inline int libgeneral_log(const char *prefix, const char *fmt, ...){
 
 #define safeFree(ptr) ({if (ptr) {free(ptr); ptr=NULL;}})
 #define safeFreeCustom(ptr,func) ({if (ptr) {func(ptr); ptr=NULL;}})
+#define safeFreeCustomType(ptr,func,type) ({if (ptr) {func(ptr); ptr=(type)0LLU;}})
 #define safeFreeConst(ptr) ({if(ptr){void *fbuf = (void*)ptr;ptr = NULL; free(fbuf);}})
 #define safeClose(fd) ({if (fd != -1) {close(fd); fd=-1;}})
 #define safeCloseCustom(fd,func) ({if (fd != -1) {func(fd); fd=-1;}})
@@ -216,5 +223,13 @@ public:
             } \
         }while (0)
 #endif
+
+/* Macros for min/max. */
+#ifndef MIN
+#   define MIN(a, b) (((a)<(b))?(a):(b))
+#endif /* MIN */
+#ifndef MAX
+#   define MAX(a, b) (((a)>(b))?(a):(b))
+#endif  /* MAX */
 
 #endif /* macros_h */

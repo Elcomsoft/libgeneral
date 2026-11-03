@@ -52,6 +52,8 @@ case $host_os in
         AC_DEFINE([DONT_HAVE_FUNCTIONAL],[1],[Define if you DONT have <functional>])
       ])
       AC_LANG_POP([C++])
+      LDFLAGS+=" -no-undefined"
+      AC_SUBST([extra_lib_flags], ["-no-undefined"])
       ;;
   *mingw*|*msys*|*linux*)
         AC_MSG_RESULT([${host_os}])
@@ -91,10 +93,60 @@ fi
 AM_CONDITIONAL(BUILD_MINIMAL, test x$build_minimal == xyes)
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h byteswap.h endian.h sys/param.h winsock.h])
+AC_CHECK_HEADERS([arpa/inet.h byteswap.h endian.h sys/param.h winsock.h unistd.h fcntl.h sys/stat.h])
 
 # Check for functions
-AC_CHECK_DECLS([htonll], [], [], [[#include <arpa/inet.h>]])
+AC_CHECK_FUNCS([strtoul_l])
+
+AC_CHECK_DECLS([htonll], [
+    AC_SUBST([HAVE_DECL_HTONLL], [1])
+], [
+    AC_SUBST([HAVE_DECL_HTONLL], [0])
+], [[#include <arpa/inet.h>]])
+
+AC_COMPILE_IFELSE([
+  #include <winsock.h>
+  int main(){
+    (void)htons(1);
+    return 0;
+  }
+], [
+    AC_SUBST([HAVE_DECL_HTONS], [1])
+], [
+  AC_COMPILE_IFELSE([
+    #include <arpa/inet.h>
+    int main(){
+      (void)htons(1);
+      return 0;
+    }
+  ], [
+      AC_SUBST([HAVE_DECL_HTONS], [1])
+  ], [
+      AC_SUBST([HAVE_DECL_HTONS], [0])
+  ])
+])
+
+AC_COMPILE_IFELSE([
+  #include <winsock.h>
+  int main(){
+    (void)htonl(1);
+    return 0;
+  }
+], [
+  AC_SUBST([HAVE_DECL_HTONL], [1])
+], [
+  AC_COMPILE_IFELSE([
+    #include <arpa/inet.h>
+    int main(){
+      (void)htonl(1);
+      return 0;
+    }
+  ], [
+      AC_SUBST([HAVE_DECL_HTONL], [1])
+  ], [
+      AC_SUBST([HAVE_DECL_HTONL], [0])
+  ])
+])
 
 AC_CHECK_DECLS([htole64], [
     AC_SUBST([HAVE_DECL_HTOLE64], [1])
@@ -164,6 +216,9 @@ AC_SUBST([DEB_VERSION], [0.${VERSION_COMMIT_COUNT}-git-${VERSION_COMMIT_SHA}])
 if test "x${host_cpu}" == "xx86_64"; then
   AC_SUBST([DEB_ARCH], [amd64])
 fi
+
+# check for large file support
+AC_SYS_LARGEFILE
 
 AC_CONFIG_FILES([Makefile
                  include/libgeneral/macros.h

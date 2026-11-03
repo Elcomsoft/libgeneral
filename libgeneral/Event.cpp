@@ -5,14 +5,14 @@
 //  Created by tihmstar on 15.08.20.
 //  Copyright © 2020 tihmstar. All rights reserved.
 //
-
 #include "../include/libgeneral/macros.h"
+
 #include "../include/libgeneral/Event.hpp"
 
 using namespace tihmstar;
 
 Event::Event()
-: _members(0), _curSendEvent(0), _curWaitEvent(0)
+: _members(0), _curEvent(0), _isDying(false)
 {
     
 }
@@ -27,7 +27,7 @@ Event::~Event(){
 
 uint64_t Event::getNextEvent(){
     std::unique_lock<std::mutex> lk(_m);
-    uint64_t nextEvent = _curWaitEvent+1;
+    uint64_t nextEvent = _curEvent+1;
     if (nextEvent == 0) nextEvent++;
     return nextEvent;
 }
@@ -36,28 +36,25 @@ void Event::waitForEvent(uint64_t event){
     std::unique_lock<std::mutex> lk(_m);
     ++_members;
 
-    _cv.wait(lk, [&]{return _curSendEvent>=event;});
-    
-    _curWaitEvent = _curSendEvent;
+    _cv.wait(lk, [&]{return _curEvent>=event || _isDying;});
     
     --_members;
     _cm.notify_all();
+    retassure(!_isDying, "object died while waiting on it");
 }
 
 void Event::notifyAll(){
-    std::unique_lock<std::mutex> *lk = new std::unique_lock<std::mutex>(_m);
-    bool doUnlockHere = true;
-    cleanup([&]{
-        if (doUnlockHere) {
-            lk->unlock();
-            delete lk;
-        }
-    });
-    
-    if(++_curSendEvent == 0) ++_curSendEvent;
+    std::unique_lock<std::mutex> lk(_m);
+    if(++_curEvent == 0) ++_curEvent;
     _cv.notify_all();
 }
 
 uint64_t Event::members() const{
     return _members;
+}
+
+void Event::kill(){
+    std::unique_lock<std::mutex> lk(_m);
+    _isDying = true;
+    _cv.notify_all();
 }
